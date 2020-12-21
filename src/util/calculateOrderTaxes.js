@@ -1,4 +1,5 @@
 import Random from "@reactioncommerce/random";
+import fetchWisherShippingAddress from "../../../orders-custom/util/fetchWisherShippingAddress.js";
 
 const TAX_SERVICE_NAME = "custom-rates";
 
@@ -21,17 +22,17 @@ async function getTaxesForShop(collections, order) {
       $or: [{
         postal: shippingAddress.postal
       }, {
-        postal: null,
+        postal: "",
         region: shippingAddress.region,
         country: shippingAddress.country
       }, {
-        postal: null,
-        region: null,
+        postal: "",
+        region: "",
         country: shippingAddress.country
       }, {
-        postal: null,
-        region: null,
-        country: null
+        postal: "",
+        region: "",
+        country: ""
       }]
     });
   }
@@ -42,17 +43,17 @@ async function getTaxesForShop(collections, order) {
       $or: [{
         postal: originAddress.postal
       }, {
-        postal: null,
+        postal: "",
         region: originAddress.region,
         country: originAddress.country
       }, {
-        postal: null,
-        region: null,
+        postal: "",
+        region: "",
         country: originAddress.country
       }, {
-        postal: null,
-        region: null,
-        country: null
+        postal: "",
+        region: "",
+        country: ""
       }]
     });
   }
@@ -80,11 +81,13 @@ async function getTaxesForShop(collections, order) {
  * @returns {Object|null} Calculated tax information, in `TaxServiceResult` schema, or `null` if can't calculate
  */
 export default async function calculateOrderTaxes({ context, order }) {
-  const { items, originAddress, shippingAddress } = order;
+  const { items, originAddress } = order;
+
+  const shippingAddress = await fetchWisherShippingAddress(context, order.celebrityId);
 
   if (!shippingAddress && !originAddress) return null;
 
-  const allTaxes = await getTaxesForShop(context.collections, order);
+  const allTaxes = await getTaxesForShop(context.collections, { ...order, shippingAddress });
 
   /**
    * @param {Object} item The item
